@@ -1,0 +1,13 @@
+{
+  "name": "semaforo-juego",
+  "version": "1.0.0",
+  "description": "Juego de semaforo F1 con tiempo de reacción y marcador",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "express": "^4.19.0",
+    "pg": "^8.11.0"
+  }
+}

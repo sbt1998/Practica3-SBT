@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Juego Semáforo F1</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- PANTALLA 1: NOMBRE -->
+  <div id="pantalla-nombre">
+    <h1>Juego de Semáforo / Tiempo de Desenfunde</h1>
+    <p>Introduce tu nombre para empezar:</p>
+    <form id="form-nombre">
+      <input
+        type="text"
+        id="nombre"
+        placeholder="Tu nombre"
+        required
+        autocomplete="off"
+      />
+      <button type="submit">Entrar</button>
+    </form>
+  </div>
+
+  <!-- PANTALLA 2: JUEGO -->
+  <div id="pantalla-juego" class="oculto">
+    <h2 id="saludo"></h2>
+
+    <p id="instrucciones">
+      El objetivo es pulsar el botón justo cuando las luces del semáforo se apaguen.
+    </p>
+
+    <!-- Semáforo estilo F1 -->
+    <div class="semaforo">
+      <div class="fila-luces">
+        <div class="luz" id="luz1"></div>
+        <div class="luz" id="luz2"></div>
+        <div class="luz" id="luz3"></div>
+        <div class="luz" id="luz4"></div>
+        <div class="luz" id="luz5"></div>
+      </div>
+    </div>
+
+    <!-- Botón grande rojo -->
+    <button id="boton-juego" class="boton-rojo">
+      Empezar
+    </button>
+
+    <p id="mensaje"></p>
+    <p id="tiempo"></p>
+
+    <button id="btn-ver-resultados" class="boton-secundario">
+      Ver mejores tiempos
+    </button>
+
+    <div id="tabla-resultados" class="oculto">
+      <h3>Marcador (20 mejores tiempos)</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nombre</th>
+            <th>Tiempo (ms)</th>
+            <th>Fecha</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-resultados"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const pantallaNombre = document.getElementById("pantalla-nombre");
+    const pantallaJuego = document.getElementById("pantalla-juego");
+    const formNombre = document.getElementById("form-nombre");
+    const inputNombre = document.getElementById("nombre");
+    const saludo = document.getElementById("saludo");
+    const instrucciones = document.getElementById("instrucciones");
+    const botonJuego = document.getElementById("boton-juego");
+    const mensaje = document.getElementById("mensaje");
+    const tiempoTexto = document.getElementById("tiempo");
+    const btnVerResultados = document.getElementById("btn-ver-resultados");
+    const tablaResultados = document.getElementById("tabla-resultados");
+    const tbodyResultados = document.getElementById("tbody-resultados");
+
+    const luces = [
+      document.getElementById("luz1"),
+      document.getElementById("luz2"),
+      document.getElementById("luz3"),
+      document.getElementById("luz4"),
+      document.getElementById("luz5"),
+    ];
+
+    let nombreJugador = "";
+    let estado = "inicio"; // "inicio" | "esperando" | "listo" | "resultado"
+    let timeoutId = null;
+    let inicioTiempo = null;
+
+    // -------- 1. Pantalla de nombre --------
+    formNombre.addEventListener("submit", (e) => {
+      e.preventDefault();
+      nombreJugador = inputNombre.value.trim();
+      if (!nombreJugador) return;
+
+      saludo.textContent = `Hola, ${nombreJugador}.`;
+      instrucciones.textContent =
+        "El objetivo es pulsar el botón en el momento que las luces del semáforo se apagan. Para comenzar a jugar pulsa el botón rojo de abajo.";
+      pantallaNombre.classList.add("oculto");
+      pantallaJuego.classList.remove("oculto");
+      reiniciarSemaforo();
+    });
+
+    // -------- 2. Lógica del juego --------
+    botonJuego.addEventListener("click", () => {
+      if (estado === "inicio" || estado === "resultado") {
+        // Primera pulsación: arrancar secuencia
+        empezarRonda();
+      } else if (estado === "esperando") {
+        // Ha pulsado demasiado pronto
+        mensaje.textContent = "¡Demasiado pronto! Espera a que el semáforo se apague.";
+      } else if (estado === "listo") {
+        // Segunda pulsación: medir tiempo
+        const fin = performance.now();
+        const tiempoMs = Math.round(fin - inicioTiempo);
+        tiempoTexto.textContent = `Tu tiempo de reacción es: ${tiempoMs} ms`;
+        mensaje.textContent = "";
+        estado = "resultado";
+
+        guardarResultado(nombreJugador, tiempoMs);
+      }
+    });
+
+    function empezarRonda() {
+      tiempoTexto.textContent = "";
+      mensaje.textContent = "";
+      instrucciones.textContent =
+        "Cuando el semáforo se apague, pulsa de nuevo lo más rápido posible.";
+      botonJuego.textContent = "¡Listo!";
+      reiniciarSemaforo();
+      encenderSemaforo();
+
+      const retraso = 5000 + Math.random() * 5000; // entre 5 y 10 seg
+      estado = "esperando";
+
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        apagarSemaforo();
+        inicioTiempo = performance.now();
+        estado = "listo";
+        botonJuego.textContent = "¡YA!";
+      }, retraso);
+    }
+
+    function reiniciarSemaforo() {
+      luces.forEach((l) => {
+        l.classList.remove("on");
+        l.classList.add("off");
+      });
+    }
+
+    function encenderSemaforo() {
+      luces.forEach((l) => {
+        l.classList.remove("off");
+        l.classList.add("on");
+      });
+    }
+
+    function apagarSemaforo() {
+      luces.forEach((l) => {
+        l.classList.remove("on");
+        l.classList.add("off");
+      });
+    }
+
+    async function guardarResultado(nombre, tiempoMs) {
+      try {
+        const res = await fetch("/api/resultados", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nombre, tiempoMs }),
+        });
+        const data = await res.json();
+        if (!data.ok) {
+          console.error("Error guardando resultado", data);
+        }
+      } catch (e) {
+        console.error("Error de red al guardar resultado", e);
+      }
+    }
+
+    // -------- 3. Ver marcador --------
+    btnVerResultados.addEventListener("click", async () => {
+      try {
+        const res = await fetch("/api/resultados");
+        const resultados = await res.json();
+        tbodyResultados.innerHTML = "";
+        resultados.forEach((r, idx) => {
+          const tr = document.createElement("tr");
+          const fecha = new Date(r.creado_en);
+          tr.innerHTML = `
+            <td>${idx + 1}</td>
+            <td>${r.nombre}</td>
+            <td>${r.tiempo_ms}</td>
+            <td>${fecha.toLocaleString()}</td>
+          `;
+          tbodyResultados.appendChild(tr);
+        });
+        tablaResultados.classList.remove("oculto");
+      } catch (e) {
+        console.error("Error obteniendo resultados", e);
+      }
+    });
+  </script>
+</body>
+</html>
