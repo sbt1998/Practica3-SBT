@@ -12,7 +12,7 @@ Forma parte de la **Práctica 3 de SBT**, cuyo objetivo es crear una aplicación
 ##▶️ Cómo instalar el proyecto 
 1. Tener instalados Docker Desktop o Docker en el ordenador
 2. Descargar version con git clone https://github.com/sbt1998/Practica3-SBT.git o descargar el zip desde https://github.com/sbt1998/Practica3-SBT.git
-3. Desde Practica3-SBT/semaforoF1, lanzar  docker-compose up -d
+3. Desde la carpeta /Practica3-SBT/semaforoF1, lanzar  docker-compose up -d
 5. Para acceder y jugar, acceder al navegador, y escribir en el http://localhost:8080
 
 ---
