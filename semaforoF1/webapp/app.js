@@ -25,7 +25,7 @@ async function initDb() {
 }
 
 app.use(express.json());
-app.use(express.static("public"));
+app.use(express.static("web"));
 
 // API para guardar un resultado
 app.post("/api/resultados", async (req, res) => {

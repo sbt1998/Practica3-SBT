@@ -15,7 +15,7 @@ services:
       - db_data:/var/lib/postgresql/data
 
   app:
-    build: ./app
+    build: ./webapp
     container_name: semaforo_app
     restart: always
     depends_on:
